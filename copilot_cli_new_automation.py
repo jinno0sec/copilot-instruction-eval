@@ -7,7 +7,7 @@
 必要条件:
 - Node.js v22以上
 - npm v10以上
-- npm install -g @github/copilot
+- npm install (リポジトリのルートで実行)
 - アクティブなCopilot サブスクリプション
 """
 
@@ -35,7 +35,8 @@ class NewCopilotCLI:
     """新しい GitHub Copilot CLI (@github/copilot) のラッパー"""
 
     def __init__(self):
-        self.copilot_command = "copilot"
+        # npx を使用して、ローカルにインストールされたcopilot-cli を実行
+        self.copilot_command = "npx copilot"
 
     def check_installation(self) -> Dict[str, any]:
         """
@@ -73,11 +74,12 @@ class NewCopilotCLI:
 
         # Copilot CLIの確認
         try:
+            command_parts = self.copilot_command.split()
             result = subprocess.run(
-                [self.copilot_command, "--version"],
+                command_parts + ["--version"],
                 capture_output=True,
                 text=True,
-                timeout=5,
+                timeout=10, # npxの初回実行は時間がかかる場合がある
             )
             if result.returncode == 0:
                 status["installed"] = True
@@ -110,8 +112,9 @@ class NewCopilotCLI:
         try:
             # 注: これは簡易実装です。実際のCopilot CLIは対話型のため、
             # pexpectなどのライブラリを使用した方が安定します。
+            command_parts = self.copilot_command.split()
             process = subprocess.Popen(
-                [self.copilot_command],
+                command_parts,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -263,14 +266,14 @@ class NewCopilotCodeReviewer:
         print("次のステップ（手動実行）")
         print("=" * 70)
         print("\n1. ターミナルで Copilot CLI を起動:")
-        print("   $ copilot")
+        print("   $ npx copilot")
         print("\n2. 以下のプロンプトをコピー＆ペースト:")
         print("\n" + "-" * 70)
         print(prompt)
         print("-" * 70)
 
         print("\n3. または、ファイルから読み込み:")
-        print(f"   $ cat {temp_file} | copilot")
+        print(f"   $ cat {temp_file} | npx copilot")
 
         print("\n⚠️  注意: 新しい Copilot CLI は対話型のため、")
         print("   完全な自動化にはさらなる実装が必要です。")
@@ -324,10 +327,10 @@ class NewCopilotCodeReviewer:
         print("=" * 70)
 
         print("\n📦 インストール:")
-        print("  npm install -g @github/copilot")
+        print("  npm install (このリポジトリのルートで)")
 
         print("\n🚀 起動:")
-        print("  copilot")
+        print("  npx copilot")
 
         print("\n🔐 認証（初回のみ）:")
         print("  > /login")

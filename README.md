@@ -45,8 +45,6 @@ pip install -r requirements.txt
 # 3. Install Node.js dependencies (for tooling)
 npm install
 
-# 4. Install the official GitHub Copilot CLI globally
-npm install -g @github/copilot
 ```
 
 ### 3. Authentication
@@ -54,8 +52,9 @@ npm install -g @github/copilot
 Before first use, you must authenticate the Copilot CLI with your GitHub account.
 
 ```bash
-# Start the interactive Copilot CLI
-copilot
+# After running `npm install`, the Copilot CLI is available locally.
+# Start the interactive Copilot CLI using npx
+npx copilot
 
 # Inside the Copilot prompt, log in
 > /login
@@ -71,7 +70,7 @@ The primary script for this project is `copilot_cli_new_automation.py`. This scr
 python copilot_cli_new_automation.py
 ```
 
-This will process the sample code in `/code` and generate a review prompt, which it then prints to the console and copies to your clipboard. You can then paste this prompt into the interactive `copilot` session to get a code review.
+This will process the sample code in `/code` and generate a review prompt, which it then prints to the console and copies to your clipboard. You can then paste this prompt into an interactive `npx copilot` session to get a code review.
 
 ## 📚 Canonical Documents
 

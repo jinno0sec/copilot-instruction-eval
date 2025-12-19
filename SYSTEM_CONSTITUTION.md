@@ -14,7 +14,11 @@ This constitution applies to all content within this repository, including but n
 If any conflict arises between this document and any other document or convention in the repository (e.g., `README.md`, `CONTRIBUTING.md`), **this SYSTEM_CONSTITUTION.md shall always take precedence**.
 
 ### 0.3 Enforcement
-- **Automated Checks**: Where possible, rules will be enforced via CI checks (linting, testing, dependency analysis). (TBD: CI is not yet configured).
+- **Automated Checks**: Where possible, rules will be enforced via a CI pipeline (e.g., GitHub Actions). The following checks MUST be implemented:
+  - **Python Linting**: Using `flake8`.
+  - **Python Testing**: Using `pytest`.
+  - **Dependency Vulnerability Scanning**: Using `pip-audit` and `npm audit`.
+  (Note: The CI workflow is yet to be configured).
 - **Mandatory Review**: All pull requests (PRs) MUST be reviewed for compliance with this constitution.
 - **Invalidity Clause**: Any PR that violates a "MUST" or "MUST NOT" rule defined herein is considered invalid and **MUST NOT be merged**.
 
@@ -37,7 +41,7 @@ Any PR whose primary purpose does not align with section 1.1 WILL be rejected.
 
 ### 2.1 Security & Privacy
 - **No Secrets**: Secrets (API keys, tokens, credentials) MUST NOT be committed to the repository, even temporarily. Use environment variables or a secure vault system. The `.env.example` file is the template for required variables.
-- **Dependency Security**: Dependencies listed in `requirements.txt` and `package.json` SHOULD be periodically scanned for vulnerabilities. (TBD: A scanner like `pip-audit` or `npm audit` should be added to CI).
+- **Dependency Security**: Dependencies listed in `requirements.txt` and `package.json` MUST be periodically scanned for known vulnerabilities using `pip-audit` and `npm audit` respectively as part of the CI process.
 
 ### 2.2 Reliability & Safety
 - **Runnable Code**: All scripts in the root directory MUST be runnable. Non-functional or purely conceptual code (like the original `copilot_gui_poc.py`) MUST be placed in an `archive/` or `deprecated/` directory.
@@ -85,7 +89,7 @@ A PR is considered "Done" and ready to merge only when it meets all the followin
 - [ ] All new or modified scripts (`.py`) are runnable and have been tested by the author.
 - [ ] It includes an "Evidence Summary" if required by section 3.2.
 - [ ] It updates relevant documentation (`README.md`, etc.) if the change impacts usage or technical direction.
-- [ ] (TBD: CI) All automated checks (linting, testing) must pass.
+- [ ] (TBD: CI) All automated CI checks (linting, testing, vulnerability scanning) must pass.
 
 ## 6. Decision System (トレードオフと優先順位)
 
@@ -103,7 +107,7 @@ The guiding principle is **YAGNI (You Ain't Gonna Need It)**. Do not implement f
 No exceptions to this constitution are permitted unless they follow this explicit process:
 1.  **Create an Issue**: An issue must be created to propose the exception, detailing the rule to be bypassed and the justification.
 2.  **Provide Evidence**: The proposal must include strong evidence (as per Section 3) for why the exception is necessary.
-3.  **Maintainer Approval**: The exception must be explicitly approved by a repository maintainer (TBD: Define maintainers).
+3.  **Maintainer Approval**: The exception must be explicitly approved by a repository maintainer. (TBD: Maintainers are to be defined, e.g., in a `MAINTAINERS.md` file or GitHub team).
 4.  **Document in PR**: The approved issue number MUST be referenced in the PR that implements the exception.
 
 ### 7.2 High-Risk Areas

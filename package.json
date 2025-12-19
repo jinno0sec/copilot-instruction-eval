@@ -17,8 +17,8 @@
   "author": "Cascade Agent",
   "license": "MIT",
   "dependencies": {
-    "papaparse": "^5.4.1",
-    "puppeteer": "^22.12.1",
-    "dotenv": "^16.4.5"
+    "papaparse": "5.5.3",
+    "puppeteer": "22.15.0",
+    "dotenv": "16.6.1"
   }
 }

@@ -18,7 +18,6 @@ If any conflict arises between this document and any other document or conventio
   - **Python Linting**: Using `flake8`.
   - **Python Testing**: Using `pytest`.
   - **Dependency Vulnerability Scanning**: Using `pip-audit` and `npm audit`.
-  (Note: The CI workflow is yet to be configured).
 - **Mandatory Review**: All pull requests (PRs) MUST be reviewed for compliance with this constitution.
 - **Invalidity Clause**: Any PR that violates a "MUST" or "MUST NOT" rule defined herein is considered invalid and **MUST NOT be merged**.
 
@@ -89,7 +88,7 @@ A PR is considered "Done" and ready to merge only when it meets all the followin
 - [ ] All new or modified scripts (`.py`) are runnable and have been tested by the author.
 - [ ] It includes an "Evidence Summary" if required by section 3.2.
 - [ ] It updates relevant documentation (`README.md`, etc.) if the change impacts usage or technical direction.
-- [ ] (TBD: CI) All automated CI checks (linting, testing, vulnerability scanning) must pass.
+- [ ] All automated CI checks (linting, testing, vulnerability scanning) must pass.
 
 ## 6. Decision System (トレードオフと優先順位)
 

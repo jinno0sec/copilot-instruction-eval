@@ -49,7 +49,7 @@ class VSCodeCLIApproach:
     def run_workflow(self, code: str, instruction: str) -> dict:
         """
         ワークフロー実行
-        
+
         注意: このアプローチはGUI操作を自動化できません。
         ユーザーが手動でCopilotを操作する必要があります。
         """
@@ -64,14 +64,14 @@ class VSCodeCLIApproach:
         # VS Codeで開く
         success = self.open_in_vscode(temp_file)
         if success:
-            print(f"✅ VS Codeでファイルを開きました")
-            print(f"\n📝 次のステップ（手動）:")
-            print(f"   1. Copilot Chatを開く (Ctrl+Alt+I)")
+            print("✅ VS Codeでファイルを開きました")
+            print("\n📝 次のステップ（手動）:")
+            print("   1. Copilot Chatを開く (Ctrl+Alt+I)")
             print(f"   2. 次の指示を入力: {instruction}")
-            print(f"   3. 応答を確認")
-            print(f"\n⚠️  このアプローチは完全自動化できません")
+            print("   3. 応答を確認")
+            print("\n⚠️  このアプローチは完全自動化できません")
         else:
-            print(f"❌ VS Code起動に失敗しました")
+            print("❌ VS Code起動に失敗しました")
 
         return {
             "success": success,
@@ -162,24 +162,24 @@ class GitHubCopilotCLIApproach:
         print("✅ GitHub Copilot CLI利用可能")
 
         # コードの説明を取得
-        print(f"\n📝 コードの説明を取得中...")
+        print("\n📝 コードの説明を取得中...")
         explanation = self.explain_code(code)
 
         if explanation:
-            print(f"✅ 説明取得成功:")
+            print("✅ 説明取得成功:")
             print(f"\n{explanation}\n")
         else:
-            print(f"❌ 説明取得失敗")
+            print("❌ 説明取得失敗")
 
         # コマンド提案を取得
         print(f"\n📝 指示: {instruction}")
         suggestion = self.suggest_command(instruction)
 
         if suggestion:
-            print(f"✅ 提案取得成功:")
+            print("✅ 提案取得成功:")
             print(f"\n{suggestion}\n")
         else:
-            print(f"❌ 提案取得失敗")
+            print("❌ 提案取得失敗")
 
         return {
             "success": explanation is not None or suggestion is not None,
@@ -304,13 +304,13 @@ export function activate(context: vscode.ExtensionContext) {
             // Copilot APIを呼び出し（実装例）
             // 注: 実際のCopilot API利用には適切な認証とAPI設定が必要
             const instruction = 'PEP8に準拠し、型ヒントを追加してください';
-            
+
             // チャットビューを開く
             await vscode.commands.executeCommand('workbench.action.chat.open');
-            
+
             // 指示を送信（API経由）
             // await sendToCopilot(code, instruction);
-            
+
             vscode.window.showInformationMessage('コードレビューを実行中...');
         }
     );
@@ -449,16 +449,16 @@ def calculate_area(width, height):
 
     print("\n📊 各アプローチの評価:")
     print(
-        f"\n  1. VS Code CLI:        自動化度: ❌ | 安定性: ⭐⭐⭐   | 実装難易度: ⭐"
+        "  1. VS Code CLI:        自動化度: ❌ | 安定性: ⭐⭐⭐   | 実装難易度: ⭐"
     )
     print(
-        f"  2. GitHub Copilot CLI: 自動化度: ✅ | 安定性: ⭐⭐⭐⭐⭐ | 実装難易度: ⭐"
+        "  2. GitHub Copilot CLI: 自動化度: ✅ | 安定性: ⭐⭐⭐⭐⭐ | 実装難易度: ⭐"
     )
     print(
-        f"  3. pyautogui:          自動化度: ✅ | 安定性: ⭐      | 実装難易度: ⭐⭐⭐⭐⭐"
+        "  3. pyautogui:          自動化度: ✅ | 安定性: ⭐      | 実装難易度: ⭐⭐⭐⭐⭐"
     )
     print(
-        f"  4. VS Code Extension:  自動化度: ✅ | 安定性: ⭐⭐⭐⭐⭐ | 実装難易度: ⭐⭐⭐"
+        "  4. VS Code Extension:  自動化度: ✅ | 安定性: ⭐⭐⭐⭐⭐ | 実装難易度: ⭐⭐⭐"
     )
 
     print("\n🏆 推奨順位:")

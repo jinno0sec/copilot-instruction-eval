@@ -10,7 +10,6 @@
 """
 
 import asyncio
-import sys
 import subprocess
 import os
 from pathlib import Path
@@ -41,7 +40,6 @@ class TechVerification:
         self.print_header("1. Playwright インストール確認")
         try:
             import playwright
-            from playwright.async_api import async_playwright
 
             version = playwright.__version__
             self.print_result(
@@ -50,11 +48,12 @@ class TechVerification:
 
             # Chromiumブラウザの確認
             try:
-                result = subprocess.run(
+                subprocess.run(
                     ["playwright", "install", "--dry-run"],
                     capture_output=True,
                     text=True,
                     timeout=5,
+                    check=True
                 )
                 self.print_result(
                     "Playwright ブラウザ", True, "インストールコマンドが利用可能"
@@ -66,28 +65,27 @@ class TechVerification:
 
             return True
         except ImportError as e:
-            self.print_result("Playwright インストール", False, f"未インストール: {str(e)}")
+            self.print_result(
+                "Playwright インストール", False, f"未インストール: {str(e)}"
+            )
             return False
 
     def verify_vscode_paths(self) -> bool:
         """VS Code実行ファイルのパスを確認"""
         self.print_header("2. VS Code 実行パス確認")
 
-        # 一般的なVS Codeパスのリスト
         possible_paths = [
             "/usr/bin/code",
             "/usr/local/bin/code",
             "/snap/bin/code",
             os.path.expanduser("~/.local/bin/code"),
-            "/mnt/c/Users/*/AppData/Local/Programs/Microsoft VS Code/Code.exe",  # WSL
+            "/mnt/c/Users/*/AppData/Local/Programs/Microsoft VS Code/Code.exe",
         ]
 
         found_paths = []
         for path in possible_paths:
-            # ワイルドカード展開
             if "*" in path:
                 from glob import glob
-
                 expanded = glob(path)
                 for exp_path in expanded:
                     if os.path.exists(exp_path):
@@ -108,7 +106,6 @@ class TechVerification:
         self.print_header("3. VS Code CLI コマンド確認")
 
         try:
-            # VS Codeバージョン確認
             result = subprocess.run(
                 ["code", "--version"], capture_output=True, text=True, timeout=5
             )
@@ -116,7 +113,6 @@ class TechVerification:
                 version = result.stdout.strip().split("\n")[0]
                 self.print_result("VS Code CLI", True, f"バージョン: {version}")
 
-                # 拡張機能リスト取得
                 result_ext = subprocess.run(
                     ["code", "--list-extensions"],
                     capture_output=True,
@@ -125,7 +121,6 @@ class TechVerification:
                 )
                 extensions = result_ext.stdout.strip().split("\n")
 
-                # Copilot拡張機能の確認
                 copilot_extensions = [
                     ext for ext in extensions if "copilot" in ext.lower()
                 ]
@@ -142,7 +137,9 @@ class TechVerification:
 
                 return True
             else:
-                self.print_result("VS Code CLI", False, f"実行エラー: {result.stderr}")
+                self.print_result(
+                    "VS Code CLI", False, f"実行エラー: {result.stderr}"
+                )
                 return False
         except FileNotFoundError:
             self.print_result("VS Code CLI", False, "codeコマンドが見つかりません")
@@ -156,7 +153,6 @@ class TechVerification:
         self.print_header("4. GitHub Copilot CLI 確認")
 
         try:
-            # GitHub Copilot CLIの確認
             result = subprocess.run(
                 ["gh", "copilot", "--version"],
                 capture_output=True,
@@ -165,7 +161,8 @@ class TechVerification:
             )
             if result.returncode == 0:
                 self.print_result(
-                    "GitHub Copilot CLI", True, f"出力: {result.stdout.strip()}"
+                    "GitHub Copilot CLI", True,
+                    f"出力: {result.stdout.strip()}"
                 )
                 return True
             else:
@@ -174,7 +171,9 @@ class TechVerification:
                 )
                 return False
         except FileNotFoundError:
-            self.print_result("GitHub Copilot CLI", False, "ghコマンドが見つかりません")
+            self.print_result(
+                "GitHub Copilot CLI", False, "ghコマンドが見つかりません"
+            )
             return False
         except Exception as e:
             self.print_result("GitHub Copilot CLI", False, f"エラー: {str(e)}")
@@ -188,12 +187,14 @@ class TechVerification:
             import pyautogui
 
             version = pyautogui.__version__
-            self.print_result("pyautogui インストール", True, f"バージョン: {version}")
+            self.print_result(
+                "pyautogui インストール", True, f"バージョン: {version}"
+            )
 
-            # 画面サイズ取得テスト
             screen_size = pyautogui.size()
             self.print_result(
-                "画面情報取得", True, f"画面サイズ: {screen_size.width}x{screen_size.height}"
+                "画面情報取得", True,
+                f"画面サイズ: {screen_size.width}x{screen_size.height}"
             )
 
             return True
@@ -212,7 +213,6 @@ class TechVerification:
             from playwright.async_api import async_playwright
 
             async with async_playwright() as p:
-                # Chromiumブラウザの起動テスト
                 try:
                     browser = await p.chromium.launch(headless=True)
                     page = await browser.new_page()
@@ -239,7 +239,6 @@ class TechVerification:
         """VS Code Extension APIの利用可能性確認"""
         self.print_header("7. VS Code Extension API 確認")
 
-        # package.jsonが存在するか確認
         workspace_root = Path(__file__).parent
         package_json = workspace_root / "package.json"
 
@@ -254,14 +253,15 @@ class TechVerification:
                 "package.json が存在しません（拡張機能プロジェクトではない）",
             )
 
-        # Node.jsの確認
         try:
             result = subprocess.run(
                 ["node", "--version"], capture_output=True, text=True, timeout=5
             )
             if result.returncode == 0:
                 version = result.stdout.strip()
-                self.print_result("Node.js インストール", True, f"バージョン: {version}")
+                self.print_result(
+                    "Node.js インストール", True, f"バージョン: {version}"
+                )
             else:
                 self.print_result("Node.js インストール", False, "実行エラー")
         except FileNotFoundError:
@@ -273,14 +273,12 @@ class TechVerification:
         """検証結果に基づいた推奨事項を生成"""
         self.print_header("検証結果サマリーと推奨事項")
 
-        print("\n📊 検証結果:")
         success_count = sum(1 for r in self.results.values() if r["success"])
         total_count = len(self.results)
-        print(f"  成功: {success_count}/{total_count} 項目")
+        print(f"\n📊 検証結果: 成功: {success_count}/{total_count} 項目")
 
         print("\n💡 推奨される実装アプローチ:")
 
-        # VS Code CLIが利用可能な場合
         if self.results.get("VS Code CLI", {}).get("success"):
             print("\n  🎯 アプローチ1: VS Code CLI + スクリプト連携（推奨）")
             print("     - VS Code CLIでファイルを開く")
@@ -288,7 +286,6 @@ class TechVerification:
             print("     - キーボードショートカットをシミュレート")
             print("     - 実装難易度: 中")
 
-        # GitHub Copilot CLIが利用可能な場合
         if self.results.get("GitHub Copilot CLI", {}).get("success"):
             print("\n  🎯 アプローチ2: GitHub Copilot CLI（最も推奨）")
             print("     - コマンドラインから直接Copilotを利用")
@@ -296,7 +293,6 @@ class TechVerification:
             print("     - 自動化が容易")
             print("     - 実装難易度: 低")
 
-        # pyautoguiが利用可能な場合
         if self.results.get("pyautogui インストール", {}).get("success"):
             print("\n  🎯 アプローチ3: pyautogui GUI自動化")
             print("     - 画像認識ベースでGUIを操作")
@@ -304,7 +300,6 @@ class TechVerification:
             print("     - 環境依存性が高い")
             print("     - 実装難易度: 高")
 
-        # VS Code Extension開発の推奨
         print("\n  🎯 アプローチ4: VS Code Extension 開発（最も安定）")
         print("     - VS Code拡張機能として実装")
         print("     - Extension APIから直接Copilot APIを呼び出し")
@@ -322,7 +317,6 @@ class TechVerification:
         print("  技術検証スクリプト開始")
         print("=" * 70)
 
-        # 同期的な検証
         self.verify_playwright_installation()
         self.verify_vscode_paths()
         self.verify_vscode_cli()
@@ -330,10 +324,8 @@ class TechVerification:
         self.verify_pyautogui()
         self.verify_vscode_extension_api()
 
-        # 非同期検証
         await self.verify_playwright_electron()
 
-        # 推奨事項の生成
         self.generate_recommendations()
 
         print("\n" + "=" * 70)

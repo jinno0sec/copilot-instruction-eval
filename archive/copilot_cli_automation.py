@@ -16,7 +16,7 @@ import subprocess
 import sys
 import json
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from dataclasses import dataclass, asdict
 
 
@@ -107,7 +107,9 @@ class GitHubCopilotCLI:
             print(f"エラー: {e}", file=sys.stderr)
             return None
 
-    def suggest_improvement(self, instruction: str, timeout: int = 30) -> Optional[str]:
+    def suggest_improvement(
+            self, instruction: str, timeout: int = 30
+    ) -> Optional[str]:
         """
         改善提案を取得
 
@@ -120,7 +122,10 @@ class GitHubCopilotCLI:
         """
         try:
             result = subprocess.run(
-                [self.gh_command, "copilot", "suggest", "-t", "shell", instruction],
+                [
+                    self.gh_command, "copilot", "suggest",
+                    "-t", "shell", instruction
+                ],
                 capture_output=True,
                 text=True,
                 timeout=timeout,
@@ -371,7 +376,10 @@ if __name__ == "__main__":
 """
 
     # レビュー指示
-    instruction = "このPythonコードをPEP8に準拠するようにレビューし、型ヒントを追加してください。また、より良いコメントを追加してください。"
+    instruction = (
+        "このPythonコードをPEP8に準拠するようにレビューし、"
+        "型ヒントとドキュメント文字列を追加してください。"
+    )
 
     # レビュー実行
     result = reviewer.review_code(test_code, instruction, validate=True)

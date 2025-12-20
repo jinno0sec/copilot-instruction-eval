@@ -219,26 +219,30 @@ class AgentEvaluator:
         return None, error_message
 
     def _calculate_metrics(
-            self, response: str, expected: str
+            self, response: str, expected: str,
+            response_tokens: list, expected_tokens: list,
+            response_lower_words: set, expected_lower_words: set
     ) -> Dict[str, float]:
-        """Calculate evaluation metrics for the response."""
+        """
+        Calculate evaluation metrics for the response.
+        This method is optimized to accept pre-tokenized inputs
+        to avoid redundant text processing in a loop.
+        """
         metrics = {
             "response_length": len(response),
             "expected_length": len(expected),
             "length_ratio": len(response) / max(len(expected), 1),
         }
 
-        response_words = set(response.lower().split())
-        expected_words = set(expected.lower().split())
-        intersection = len(response_words.intersection(expected_words))
-        union = len(response_words.union(expected_words))
+        intersection = len(response_lower_words.intersection(expected_lower_words))
+        union = len(response_lower_words.union(expected_lower_words))
         metrics["jaccard_similarity"] = intersection / union if union > 0 else 0
 
         try:
             smoothie = SmoothingFunction().method4
             metrics["bleu_score"] = sentence_bleu(
-                [expected.split()],
-                response.split(),
+                [expected_tokens],
+                response_tokens,
                 smoothing_function=smoothie
             )
         except Exception as e:
@@ -322,9 +326,20 @@ class AgentEvaluator:
         if error is None and response_text is not None:
             result["success"] = True
             if "expected_response" in instruction:
+                # Pre-computation for optimization
+                expected_response = instruction["expected_response"]
+                response_tokens = response_text.split()
+                expected_tokens = expected_response.split()
+                response_lower_words = set(response_text.lower().split())
+                expected_lower_words = set(expected_response.lower().split())
+
                 metrics = self._calculate_metrics(
                     response_text,
-                    instruction["expected_response"]
+                    expected_response,
+                    response_tokens,
+                    expected_tokens,
+                    response_lower_words,
+                    expected_lower_words
                 )
                 metrics["response_time"] = duration
                 result["metrics"] = metrics

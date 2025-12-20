@@ -1,15 +1,11 @@
 {
   "name": "copilot-instruction-eval-node",
   "version": "1.0.0",
-  "description": "Puppeteer script for evaluating GitHub Copilot Agent custom instructions.",
-  "main": "evaluation_script.js",
+  "description": "Node.js environment for using the @github/copilot CLI tool.",
   "scripts": {
-    "start": "node evaluation_script.js",
-    "dry-run": "node evaluation_script.js --headless=false --max-prompts=2",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "puppeteer",
     "github",
     "copilot",
     "evaluation"
@@ -18,7 +14,6 @@
   "license": "MIT",
   "dependencies": {
     "papaparse": "5.5.3",
-    "puppeteer": "22.15.0",
     "dotenv": "16.6.1"
   },
   "devDependencies": {

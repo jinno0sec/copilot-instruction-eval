@@ -1,6 +1,7 @@
 import asyncio
 from playwright.async_api import async_playwright, Playwright
 
+
 async def run(playwright: Playwright):
     # このPoCでは、既存のブラウザインスタンスには接続せず、
     # Playwrightが新しいブラウザを起動します。
@@ -58,9 +59,11 @@ async def run(playwright: Playwright):
         print("\nPoCスクリプトが終了しました。ブラウザを手動で閉じてください。")
         # await browser.close() # デバッグのため、ブラウザは開いたままにする
 
+
 async def main():
     async with async_playwright() as playwright:
         await run(playwright)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

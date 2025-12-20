@@ -1,57 +1,64 @@
 # Contributing to this Project
 
-Thank you for your interest in contributing! All contributions must align with the foundational rules and principles set forth in our [`SYSTEM_CONSTITUTION.md`](SYSTEM_CONSTITUTION.md). This document provides a practical guide for developers.
+Thank you for your interest in contributing! All contributions must align with the foundational principles and rules set forth in our governing document, [`SYSTEM_CONSTITUTION.md`](SYSTEM_CONSTITUTION.md). This document provides practical guidelines to help you get started.
 
-## 📜 Core Principles
+## 🏛️ Guiding Principle: The Constitution is Law
 
-Before you begin, please familiarize yourself with the constitution. Key principles include:
+Before making any changes, you **must** read and understand [`SYSTEM_CONSTITUTION.md`](SYSTEM_CONSTITUTION.md). It is the supreme source of truth for this repository, and all contributions will be reviewed for strict compliance.
 
--   **Purpose**: We exist solely to research and evaluate Python code review automation using GitHub Copilot tools.
--   **Evidence-Based Changes**: All technical decisions must be backed by evidence (e.g., execution proof, official documentation). No speculative changes.
--   **Core Technology**: The **only** approved tool for automation is the `@github/copilot` NPM package. GUI automation is forbidden.
+## 🚀 Development Workflow
 
-## 🚀 How to Contribute
+1.  **Set Up Your Environment**: Follow the installation instructions in the [`README.md`](README.md) to set up the necessary Python and Node.js environments.
+    ```bash
+    # Install Python dependencies
+    pip install -r requirements.txt
 
-We follow a standard GitHub flow for contributions.
+    # Install Node.js tooling dependencies
+    npm install
+    ```
 
-### 1. Branching Strategy
+2.  **Create a Branch**: Create a new branch for your feature or bugfix.
+    ```bash
+    git checkout -b your-branch-name
+    ```
 
--   Create a new branch for every new feature, bugfix, or documentation update.
--   Branch names should be descriptive and use kebab-case (e.g., `feature/update-readme`, `fix/resolve-dependency-issue`).
--   Branches should be based on the `main` branch.
+3.  **Make Your Changes**:
+    *   Ensure your code adheres to the architectural boundaries defined in the constitution (e.g., automation logic in the root, sample code in `/code`).
+    *   Remember the **Evidence-Based Change Rule** (Constitution, Section 3). Any new dependencies, tools, or significant architectural changes must be supported by verifiable evidence.
 
-### 2. Making Changes
+4.  **Ensure Code Quality**:
+    *   **Linting**: Ensure your Python code is compliant with `flake8`.
+        ```bash
+        flake8 .
+        ```
+    *   **Testing**: Run the existing tests to ensure you haven't introduced any regressions.
+        ```bash
+        pytest
+        ```
 
--   Ensure all code is runnable and tested.
--   Follow the existing code style. (Note: Linters will be enforced via CI in the future).
--   Update relevant documentation if your changes affect usage, architecture, or setup.
+5.  **Write Clear Commit Messages**: Your commit messages must be descriptive and explain the "what" and the "why" of your change, as required by the constitution (Section 2.3).
 
-### 3. Commit Messages
+    *   **Good Example**:
+        ```
+        feat: Add rouge score to evaluation metrics
 
-Commit messages MUST follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification. This helps maintain a clear and automated version history.
+        Adds the ROUGE score calculation to the AgentEvaluator to provide a more comprehensive comparison of text generation quality between agents. This aligns with our goal of robust, evidence-based evaluation.
+        ```
+    *   **Bad Example**:
+        ```
+        fix: script update
+        ```
 
--   **Format**: `type(scope): subject`
--   **Example `feat`**: `feat(automation): add new script for parsing review feedback`
--   **Example `fix`**: `fix(deps): pin dependency to resolve compatibility issue`
--   **Example `docs`**: `docs(contributing): create initial contributing guidelines`
--   **Allowed types**: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`.
+6.  **Submit a Pull Request (PR)**: Push your branch to the repository and create a Pull Request.
 
-### 4. Submitting a Pull Request (PR)
+## ✅ Pull Request Requirements
 
-1.  **Create the PR**: Push your branch to the repository and open a pull request against the `main` branch.
-2.  **Title and Description**:
-    -   The PR title should be clear and concise.
-    -   The description MUST explain the "what" and "why" of your changes.
-    -   If your change is based on a new tool or major architectural shift, you MUST include an "Evidence Summary" as required by Section 3 of the constitution.
-3.  **Compliance Check**: Ensure your PR adheres to all "MUST" / "MUST NOT" rules in [`SYSTEM_CONSTITUTION.md`](SYSTEM_CONSTITUTION.md).
-4.  **Review**: A repository maintainer will review your PR. Any PR that violates the constitution will be rejected.
+A PR will only be considered for merge if it meets the **Definition of Done** (Constitution, Section 5). This includes:
 
-## ✅ Definition of Done
+*   [ ] **Constitutional Compliance**: The PR fully complies with all "MUST" / "MUST NOT" rules.
+*   [ ] **Runnable Code**: All new or modified scripts are runnable and have been tested.
+*   [ ] **Evidence Summary (if applicable)**: If you are introducing a new tool, dependency, or major architectural change, your PR description **must** include an "Evidence Summary" as required by the constitution (Section 3.2). This summary should justify the change with links to documentation, execution proof, or other evidence.
+*   [ ] **Updated Documentation**: If your change affects how the project is used or its technical direction, you must update the `README.md` or other relevant documentation.
+*   [ ] **Passing CI Checks**: All automated checks (linting, testing, vulnerability scans) must pass. (Note: CI is TBD).
 
-A PR is considered "Done" only when it:
--   Complies with the constitution.
--   Has been tested by the author.
--   Includes necessary documentation updates.
--   (Future) Passes all CI checks.
-
-By contributing, you agree that your contributions will be licensed under the MIT License that covers the project.
+By contributing, you agree that your work will be licensed under the MIT License of this project.

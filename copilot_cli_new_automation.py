@@ -16,7 +16,7 @@ import sys
 import json
 import time
 from pathlib import Path
-from typing import Dict, Optional, List
+from typing import Dict, Optional
 from dataclasses import dataclass, asdict
 
 
@@ -79,7 +79,7 @@ class NewCopilotCLI:
                 command_parts + ["--version"],
                 capture_output=True,
                 text=True,
-                timeout=10, # npxの初回実行は時間がかかる場合がある
+                timeout=10,  # npxの初回実行は時間がかかる場合がある
             )
             if result.returncode == 0:
                 status["installed"] = True
@@ -122,7 +122,9 @@ class NewCopilotCLI:
             )
 
             # プロンプトを送信
-            stdout, stderr = process.communicate(input=prompt + "\n", timeout=timeout)
+            stdout, stderr = process.communicate(
+                input=prompt + "\n", timeout=timeout
+            )
 
             execution_time = time.time() - start_time
 
@@ -212,7 +214,10 @@ class NewCopilotCodeReviewer:
             # バージョンチェック（v22以上が必要）
             version_num = status["node_version"].replace("v", "").split(".")[0]
             if int(version_num) < 22:
-                print(f"⚠️  警告: Node.js v22以上が推奨されています（現在: {status['node_version']}）")
+                print(
+                    "⚠️  警告: Node.js v22以上が推奨されています"
+                    f"（現在: {status['node_version']}）"
+                )
 
         # npm確認
         if not status["npm_version"]:
@@ -259,7 +264,7 @@ class NewCopilotCodeReviewer:
         with open(temp_file, "w", encoding="utf-8") as f:
             f.write(prompt)
 
-        print(f"\n✅ レビュープロンプトを作成しました")
+        print("\n✅ レビュープロンプトを作成しました")
         print(f"📄 保存先: {temp_file}")
 
         print("\n" + "=" * 70)
@@ -311,11 +316,11 @@ class NewCopilotCodeReviewer:
             json.dump(result_dict, f, indent=2, ensure_ascii=False)
 
         if result.success:
-            print(f"\n✅ レビュー完了")
+            print("\n✅ レビュー完了")
             print(f"📄 結果を保存: {output_file}")
             print(f"⏱️  実行時間: {result.execution_time:.2f}秒")
         else:
-            print(f"\n❌ レビュー失敗")
+            print("\n❌ レビュー失敗")
             print(f"エラー: {result.error}")
 
         return result_dict
@@ -358,7 +363,10 @@ class NewCopilotCodeReviewer:
 
         print("\n📚 参考リソース:")
         print("  公式ドキュメント:")
-        print("  https://docs.github.com/copilot/concepts/agents/about-copilot-cli")
+        print(
+            "  https://docs.github.com/copilot/concepts/agents/"
+            "about-copilot-cli"
+        )
         print("\n  GitHubリポジトリ:")
         print("  https://github.com/github/copilot-cli")
 
@@ -401,7 +409,10 @@ if __name__ == "__main__":
     print("Area:", area)
 """
 
-    instruction = "このPythonコードをPEP8に準拠するようにレビューし、型ヒントとドキュメント文字列を追加してください。"
+    instruction = (
+        "このPythonコードをPEP8に準拠するようにレビューし、"
+        "型ヒントとドキュメント文字列を追加してください。"
+    )
 
     # 手動レビューのための準備
     print("\n" + "=" * 70)
@@ -421,8 +432,10 @@ if __name__ == "__main__":
 
     if user_input == "y":
         output_file = Path("copilot_review_result_new.json")
-        result = reviewer.review_code_batch(test_code, instruction, output_file)
-        print(f"\n📊 結果:")
+        result = reviewer.review_code_batch(
+            test_code, instruction, output_file
+        )
+        print("\n📊 結果:")
         print(json.dumps(result, indent=2, ensure_ascii=False))
 
     print("\n" + "=" * 70)

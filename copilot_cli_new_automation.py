@@ -391,8 +391,15 @@ def main():
     # 使用ガイドの表示
     reviewer.show_usage_guide()
 
-    # テストコード
-    test_code = """
+    # レビュー対象のコードをファイルから読み込む
+    code_to_review_path = Path("code/sample_code_to_review.py")
+    try:
+        code_to_review = code_to_review_path.read_text(encoding="utf-8")
+        print(f"✅ レビュー対象のコードを読み込みました: {code_to_review_path}")
+    except FileNotFoundError:
+        print(f"⚠️  警告: {code_to_review_path} が見つかりません。")
+        print("   -> デモ用のサンプルコードを使用します。")
+        code_to_review = """
 def calculate_area(width, height):
     # This function calculates the area of a rectangle
     return width * height
@@ -408,6 +415,9 @@ if __name__ == "__main__":
     area = calculate_area(int(w), int(h))
     print("Area:", area)
 """
+    except Exception as e:
+        print(f"❌ コードファイルの読み込み中にエラーが発生しました: {e}")
+        sys.exit(1)
 
     instruction = (
         "このPythonコードをPEP8に準拠するようにレビューし、"
@@ -419,7 +429,7 @@ if __name__ == "__main__":
     print("デモ: コードレビューの準備")
     print("=" * 70)
 
-    reviewer.review_code_manual(test_code, instruction)
+    reviewer.review_code_manual(code_to_review, instruction)
 
     # バッチモードを試す場合（実験的）
     print("\n" + "=" * 70)
@@ -433,7 +443,7 @@ if __name__ == "__main__":
     if user_input == "y":
         output_file = Path("copilot_review_result_new.json")
         result = reviewer.review_code_batch(
-            test_code, instruction, output_file
+            code_to_review, instruction, output_file
         )
         print("\n📊 結果:")
         print(json.dumps(result, indent=2, ensure_ascii=False))

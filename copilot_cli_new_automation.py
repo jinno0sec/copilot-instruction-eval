@@ -37,14 +37,20 @@ class NewCopilotCLI:
     def __init__(self):
         # npx を使用して、ローカルにインストールされたcopilot-cli を実行
         self.copilot_command = "npx copilot"
+        self._install_status: Optional[Dict[str, any]] = None
 
     def check_installation(self) -> Dict[str, any]:
         """
         Copilot CLIのインストール状況を確認
+        結果はキャッシュされ、2回目以降の呼び出しではサブプロセスは実行されません。
 
         Returns:
             Dict: インストール状況と詳細情報
         """
+        # ⚡ Bolt: 結果をキャッシュして不要なサブプロセス呼び出しを回避
+        if self._install_status is not None:
+            return self._install_status
+
         status = {
             "installed": False,
             "version": None,
@@ -89,6 +95,7 @@ class NewCopilotCLI:
         except Exception:
             pass
 
+        self._install_status = status
         return status
 
     def send_prompt_interactive(

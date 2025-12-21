@@ -12,6 +12,8 @@ import sys
 import time
 import logging
 from typing import Dict, List, Any, Optional, Tuple
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 
 import requests
 import pandas as pd
@@ -52,6 +54,7 @@ CONFIG = {
     "timeout": 60,  # 秒
     "max_retries": 3,  # リトライ回数
     "retry_delay": 5,  # リトライ間隔（秒）
+    "max_workers": 10, # 並列実行のための最大ワーカー数
 }
 
 
@@ -62,6 +65,7 @@ class AgentEvaluator:
         self._validate_config()
         self.instructions = self._load_instructions()
         self.results = []
+        self.results_lock = threading.Lock()
         self._setup_directories()
         self.rouge = Rouge()  # ROUGEスコア計算用
 
@@ -269,37 +273,71 @@ class AgentEvaluator:
 
         return metrics
 
+    def _process_instruction(self, instruction: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Process a single instruction: evaluate both agents
+        and return the combined result.
+        This method is designed to be called in a separate thread.
+        """
+        instruction_id = instruction["id"]
+
+        # Evaluate both agents in parallel
+        with ThreadPoolExecutor(max_workers=2) as agent_executor:
+            future_v1 = agent_executor.submit(
+                self._evaluate_instruction, instruction, "v1"
+            )
+            future_v2 = agent_executor.submit(
+                self._evaluate_instruction, instruction, "v2"
+            )
+            result_v1 = future_v1.result()
+            result_v2 = future_v2.result()
+
+        return {
+            "instruction_id": instruction_id,
+            "instruction_type": instruction["type"],
+            "difficulty": instruction["difficulty"],
+            "v1_success": result_v1["success"],
+            "v2_success": result_v2["success"],
+            "v1_metrics": result_v1.get("metrics", {}),
+            "v2_metrics": result_v2.get("metrics", {}),
+        }
+
     def run_evaluation(self) -> None:
-        """Run evaluation on all instructions for both agents."""
+        """
+        Run evaluation on all instructions for both agents in parallel.
+        """
         logger.info(
-            f"Starting evaluation of {len(self.instructions)} instructions..."
+            f"Starting evaluation of {len(self.instructions)} instructions "
+            f"with up to {self.config['max_workers']} parallel workers..."
         )
 
-        for instruction in tqdm(self.instructions,
-                                desc="Evaluating instructions"):
-            instruction_id = instruction["id"]
-            logger.info(
-                f"\nEvaluating instruction: {instruction['title']} "
-                f"({instruction['type']})"
-            )
+        with ThreadPoolExecutor(max_workers=self.config["max_workers"]) as executor:
+            # Submit all instruction processing tasks
+            future_to_instruction = {
+                executor.submit(
+                    self._process_instruction, inst
+                ): inst for inst in self.instructions
+            }
 
-            logger.info("  Testing agent_v1...")
-            result_v1 = self._evaluate_instruction(instruction, "v1")
-
-            logger.info("  Testing agent_v2...")
-            result_v2 = self._evaluate_instruction(instruction, "v2")
-
-            self.results.append({
-                "instruction_id": instruction_id,
-                "instruction_type": instruction["type"],
-                "difficulty": instruction["difficulty"],
-                "v1_success": result_v1["success"],
-                "v2_success": result_v2["success"],
-                "v1_metrics": result_v1.get("metrics", {}),
-                "v2_metrics": result_v2.get("metrics", {})
-            })
-
-            self._save_results()
+            # Process results as they complete
+            for future in tqdm(
+                as_completed(future_to_instruction),
+                total=len(self.instructions),
+                desc="Evaluating instructions"
+            ):
+                instruction = future_to_instruction[future]
+                try:
+                    result = future.result()
+                    with self.results_lock:
+                        self.results.append(result)
+                        # Save results incrementally
+                        self._save_results()
+                except Exception as e:
+                    logger.error(
+                        f"Instruction '{instruction['title']}' failed "
+                        f"with error: {e}",
+                        exc_info=True
+                    )
 
     def _evaluate_instruction(
             self, instruction: Dict[str, Any], agent_version: str
@@ -343,12 +381,13 @@ class AgentEvaluator:
                 )
                 metrics["response_time"] = duration
                 result["metrics"] = metrics
-            logger.info(f"  {agent_version} completed in {duration:.2f}s")
         else:
             error_msg = (
-                f"Error with {agent_version}: {error or 'Unknown error'}"
+                f"Error evaluating instruction ID "
+                f"{instruction['id']} for {agent_version}: "
+                f"{error or 'Unknown error'}"
             )
-            logger.error(f"  {error_msg}")
+            logger.error(error_msg)
             result["error"] = error_msg
 
         return result

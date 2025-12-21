@@ -31,9 +31,9 @@ Before making any changes, you **must** read and understand [`SYSTEM_CONSTITUTIO
         ```bash
         flake8 .
         ```
-    *   **Testing**: Run the existing tests to ensure you haven't introduced any regressions.
+    *   **Testing**: Run the existing tests to ensure you haven't introduced any regressions. Use the `-m` flag to ensure Python finds the modules correctly, matching the CI setup.
         ```bash
-        pytest
+        python3 -m pytest
         ```
 
 5.  **Write Clear Commit Messages**: Your commit messages must be descriptive and explain the "what" and the "why" of your change, as required by the constitution (Section 2.3).
@@ -59,6 +59,6 @@ A PR will only be considered for merge if it meets the **Definition of Done** (C
 *   [ ] **Runnable Code**: All new or modified scripts are runnable and have been tested.
 *   [ ] **Evidence Summary (if applicable)**: If you are introducing a new tool, dependency, or major architectural change, your PR description **must** include an "Evidence Summary" as required by the constitution (Section 3.2). This summary should justify the change with links to documentation, execution proof, or other evidence.
 *   [ ] **Updated Documentation**: If your change affects how the project is used or its technical direction, you must update the `README.md` or other relevant documentation.
-*   [ ] **Passing CI Checks**: All automated checks (linting, testing, vulnerability scans) must pass. (Note: CI is TBD).
+*   [ ] **Passing CI Checks**: All automated checks (linting, testing, vulnerability scans) must pass.
 
 By contributing, you agree that your work will be licensed under the MIT License of this project.

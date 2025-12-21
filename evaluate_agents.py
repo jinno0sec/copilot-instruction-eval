@@ -56,6 +56,8 @@ CONFIG = {
 
 
 class AgentEvaluator:
+    SAVE_INTERVAL = 10  # Save results every 10 instructions
+
     def __init__(self, config: Dict[str, Any]):
         """Initialize the evaluator with configuration."""
         self.config = config
@@ -275,8 +277,10 @@ class AgentEvaluator:
             f"Starting evaluation of {len(self.instructions)} instructions..."
         )
 
-        for instruction in tqdm(self.instructions,
-                                desc="Evaluating instructions"):
+        total_instructions = len(self.instructions)
+        for i, instruction in enumerate(
+            tqdm(self.instructions, desc="Evaluating instructions")
+        ):
             instruction_id = instruction["id"]
             logger.info(
                 f"\nEvaluating instruction: {instruction['title']} "
@@ -299,7 +303,19 @@ class AgentEvaluator:
                 "v2_metrics": result_v2.get("metrics", {})
             })
 
-            self._save_results()
+            # ⚡ Bolt Optimization: Implement periodic saving for fault tolerance.
+            # This balances performance with safety. A full save-on-every-iteration
+            # is too slow, but a save-at-the-end-only risks total data loss on crash.
+            # By saving periodically, we achieve a significant performance improvement
+            # over the original implementation while ensuring the script is robust
+            # against interruptions.
+            if (i + 1) % self.SAVE_INTERVAL == 0 and (i + 1) < total_instructions:
+                logger.info(f"Periodically saving results at instruction {i + 1}...")
+                self._save_results()
+
+        # Final save for any remaining results.
+        logger.info("Saving final results...")
+        self._save_results()
 
     def _evaluate_instruction(
             self, instruction: Dict[str, Any], agent_version: str

@@ -59,6 +59,9 @@ class TestEvaluationSetup(unittest.TestCase):
             self.fail(f"Failed to import required package: {e}")
 
 
+import numpy as np
+from evaluate_agents import AgentEvaluator
+
 class TestAgentEndpoints(unittest.TestCase):
     """Test cases for agent API endpoints."""
 
@@ -71,6 +74,53 @@ class TestAgentEndpoints(unittest.TestCase):
         """Test that agent_v2 endpoint is accessible."""
         # This is a placeholder test
         self.skipTest("Agent endpoint tests require actual API endpoints")
+
+class TestMetricsCalculation(unittest.TestCase):
+    """Test cases for the metrics calculation."""
+
+    def setUp(self):
+        """Set up the evaluator with a mock configuration."""
+        # Mock configuration that avoids hitting real endpoints
+        self.config = {
+            "agent_v1_endpoint": "mock_v1",
+            "agent_v2_endpoint": "mock_v2",
+            "api_key_v1": "mock_key",
+            "api_key_v2": "mock_key",
+            "instructions_file": "instructions.json",
+            "results_dir": "test_results",  # Add mock results directory
+        }
+        # We need to initialize the evaluator to get access to _calculate_metrics
+        # It will try to load instructions.json, which is fine.
+        self.evaluator = AgentEvaluator(self.config)
+
+    def test_calculate_metrics_precomputation(self):
+        """
+        Verify that _calculate_metrics works correctly with pre-computed inputs.
+        This tests the core logic that was refactored.
+        """
+        response = "the quick brown fox"
+        expected = "the quick brown dog"
+
+        # Pre-compute tokens and sets, simulating what run_evaluation now does
+        response_tokens = response.split()
+        expected_tokens = expected.split()
+        response_lower_words = set(response.lower().split())
+        expected_lower_words = set(expected.lower().split())
+
+        metrics = self.evaluator._calculate_metrics(
+            response,
+            expected,
+            response_tokens,
+            expected_tokens,
+            response_lower_words,
+            expected_lower_words,
+        )
+
+        # Verify some key metrics
+        self.assertAlmostEqual(metrics["jaccard_similarity"], 3 / 5, places=5)
+        self.assertTrue(0 < metrics["bleu_score"] < 1)
+        self.assertTrue(0 < metrics["rouge_l"] < 1)
+        self.assertEqual(metrics["response_length"], len(response))
 
 
 if __name__ == "__main__":

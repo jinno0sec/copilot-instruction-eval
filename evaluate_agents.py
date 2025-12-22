@@ -275,6 +275,15 @@ class AgentEvaluator:
             f"Starting evaluation of {len(self.instructions)} instructions..."
         )
 
+        # Pre-process expected responses to avoid redundant computation in loop.
+        for instruction in self.instructions:
+            if "expected_response" in instruction:
+                expected_response = instruction["expected_response"]
+                instruction["expected_tokens"] = expected_response.split()
+                instruction["expected_lower_words"] = set(
+                    expected_response.lower().split()
+                )
+
         for instruction in tqdm(self.instructions,
                                 desc="Evaluating instructions"):
             instruction_id = instruction["id"]
@@ -326,20 +335,18 @@ class AgentEvaluator:
         if error is None and response_text is not None:
             result["success"] = True
             if "expected_response" in instruction:
-                # Pre-computation for optimization
+                # Use pre-computed values from run_evaluation
                 expected_response = instruction["expected_response"]
                 response_tokens = response_text.split()
-                expected_tokens = expected_response.split()
                 response_lower_words = set(response_text.lower().split())
-                expected_lower_words = set(expected_response.lower().split())
 
                 metrics = self._calculate_metrics(
                     response_text,
                     expected_response,
                     response_tokens,
-                    expected_tokens,
+                    instruction["expected_tokens"],
                     response_lower_words,
-                    expected_lower_words
+                    instruction["expected_lower_words"]
                 )
                 metrics["response_time"] = duration
                 result["metrics"] = metrics

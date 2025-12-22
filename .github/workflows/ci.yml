@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI
 
 on:
   push:
@@ -7,43 +7,47 @@ on:
     branches: [ main ]
 
 jobs:
-  build-and-test:
+  validate:
+    name: "Validate codebase"
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
+    - name: "Checkout repository"
+      uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-          cache: 'npm'
+    - name: "Set up Node.js v22"
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
 
-      - name: Install npm dependencies
-        run: npm install
+    - name: "Install Node.js dependencies"
+      run: npm install
 
-      - name: Run npm audit
-        run: npm audit --audit-level=moderate
+    - name: "Scan for Node.js vulnerabilities"
+      run: npm audit --audit-level=moderate
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
+    - name: "Set up Python v3.11"
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
 
-      - name: Install Python dependencies
-        run: pip install -r requirements.txt
+    - name: "Install Python dependencies and tools"
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pip-audit flake8 pytest
 
-      - name: Run pip-audit
-        run: pip-audit
+    - name: "Scan for Python vulnerabilities"
+      run: pip-audit
 
-      - name: Lint with flake8
-        run: |
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: "Lint with flake8"
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-      - name: Test with pytest
-        run: python3 -m pytest
+    - name: "Test with pytest"
+      run: pytest

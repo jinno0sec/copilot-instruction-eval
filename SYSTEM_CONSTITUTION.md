@@ -106,7 +106,7 @@ The guiding principle is **YAGNI (You Ain't Gonna Need It)**. Do not implement f
 No exceptions to this constitution are permitted unless they follow this explicit process:
 1.  **Create an Issue**: An issue must be created to propose the exception, detailing the rule to be bypassed and the justification.
 2.  **Provide Evidence**: The proposal must include strong evidence (as per Section 3) for why the exception is necessary.
-3.  **Maintainer Approval**: The exception must be explicitly approved by a repository maintainer. (TBD: Maintainers are to be defined, e.g., in a `MAINTAINERS.md` file or GitHub team).
+3.  **Maintainer Approval**: The exception must be explicitly approved by a repository maintainer, as defined in [`MAINTAINERS.md`](MAINTAINERS.md).
 4.  **Document in PR**: The approved issue number MUST be referenced in the PR that implements the exception.
 
 ### 7.2 High-Risk Areas
@@ -117,6 +117,7 @@ There are currently no high-risk areas like payments or PII. However, any change
 The following documents serve as the official sources of truth for their respective areas:
 - **`SYSTEM_CONSTITUTION.md` (This file)**: The supreme law of the repository.
 - **`README.md`**: The primary entry point for understanding WHAT the project is and HOW to use it.
+- **`CONTRIBUTING.md`**: Practical guidelines and workflow for contributors.
 - **`COPILOT_CLI_UPDATE.md`**: The canonical reference for the core `@github/copilot` tool.
 - **`TECHNICAL_VERIFICATION.md`**: The historical record of technical decisions and rejected alternatives.
 

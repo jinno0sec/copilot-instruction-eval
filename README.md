@@ -78,5 +78,6 @@ The following documents are the official sources of truth for the project:
 
 *   [`SYSTEM_CONSTITUTION.md`](SYSTEM_CONSTITUTION.md): The supreme law of the repository.
 *   [`README.md`](README.md) (This file): The entry point for understanding WHAT the project is and HOW to use it.
+*   [`CONTRIBUTING.md`](CONTRIBUTING.md): Practical guidelines and workflow for contributors.
 *   [`COPILOT_CLI_UPDATE.md`](COPILOT_CLI_UPDATE.md): The canonical reference for the core `@github/copilot` tool.
 *   [`TECHNICAL_VERIFICATION.md`](TECHNICAL_VERIFICATION.md): The historical record of technical decisions and rejected alternatives.

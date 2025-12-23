@@ -91,7 +91,10 @@ class AgentEvaluator:
             raise ValueError(msg)
 
     def _load_instructions(self) -> List[Dict[str, Any]]:
-        """Load instructions from the JSON file."""
+        """
+        Load instructions from the JSON file and pre-process expected
+        responses to optimize metric calculations.
+        """
         try:
             filepath = self.config["instructions_file"]
             with open(filepath, "r", encoding="utf-8") as f:
@@ -100,6 +103,16 @@ class AgentEvaluator:
                 logger.info(
                     f"Loaded {len(instructions)} instructions from {filepath}"
                 )
+
+                # Pre-process expected responses for optimization
+                for instruction in instructions:
+                    if "expected_response" in instruction:
+                        expected = instruction["expected_response"]
+                        instruction["expected_tokens"] = expected.split()
+                        instruction["expected_lower_words"] = set(
+                            expected.lower().split()
+                        )
+
                 return instructions
         except FileNotFoundError:
             logger.error(f"Instructions file not found: {filepath}")
@@ -326,20 +339,18 @@ class AgentEvaluator:
         if error is None and response_text is not None:
             result["success"] = True
             if "expected_response" in instruction:
-                # Pre-computation for optimization
                 expected_response = instruction["expected_response"]
                 response_tokens = response_text.split()
-                expected_tokens = expected_response.split()
                 response_lower_words = set(response_text.lower().split())
-                expected_lower_words = set(expected_response.lower().split())
 
+                # Use pre-computed values from the instruction dictionary
                 metrics = self._calculate_metrics(
                     response_text,
                     expected_response,
                     response_tokens,
-                    expected_tokens,
+                    instruction["expected_tokens"],
                     response_lower_words,
-                    expected_lower_words
+                    instruction["expected_lower_words"],
                 )
                 metrics["response_time"] = duration
                 result["metrics"] = metrics

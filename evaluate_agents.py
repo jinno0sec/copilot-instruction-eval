@@ -61,6 +61,7 @@ class AgentEvaluator:
         self.config = config
         self._validate_config()
         self.instructions = self._load_instructions()
+        self._preprocess_instructions()
         self.results = []
         self._setup_directories()
         self.rouge = Rouge()  # ROUGEスコア計算用
@@ -71,6 +72,21 @@ class AgentEvaluator:
             nltk.download('punkt', quiet=True)
         except Exception as e:
             logger.warning(f"Failed to download NLTK data: {e}")
+
+    def _preprocess_instructions(self) -> None:
+        """
+        Pre-process all instructions to compute values that are static
+        and can be reused across evaluations. This avoids re-computation
+        in the main evaluation loop.
+        """
+        logger.info("Pre-processing instructions for optimization...")
+        for instruction in self.instructions:
+            if "expected_response" in instruction:
+                expected_response = instruction["expected_response"]
+                instruction["_expected_tokens"] = expected_response.split()
+                instruction["_expected_lower_words"] = set(
+                    expected_response.lower().split()
+                )
 
     def _validate_config(self) -> None:
         """Validate the configuration."""
@@ -326,20 +342,18 @@ class AgentEvaluator:
         if error is None and response_text is not None:
             result["success"] = True
             if "expected_response" in instruction:
-                # Pre-computation for optimization
+                # Metrics calculation using pre-computed values
                 expected_response = instruction["expected_response"]
                 response_tokens = response_text.split()
-                expected_tokens = expected_response.split()
                 response_lower_words = set(response_text.lower().split())
-                expected_lower_words = set(expected_response.lower().split())
 
                 metrics = self._calculate_metrics(
                     response_text,
                     expected_response,
                     response_tokens,
-                    expected_tokens,
+                    instruction["_expected_tokens"],
                     response_lower_words,
-                    expected_lower_words
+                    instruction["_expected_lower_words"],
                 )
                 metrics["response_time"] = duration
                 result["metrics"] = metrics

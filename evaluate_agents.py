@@ -283,6 +283,15 @@ class AgentEvaluator:
                 f"({instruction['type']})"
             )
 
+            # ⚡ Optimization: Pre-compute expected response tokens and words once
+            # to avoid redundant processing for each agent.
+            if "expected_response" in instruction:
+                expected_response = instruction["expected_response"]
+                instruction["expected_tokens"] = expected_response.split()
+                instruction["expected_lower_words"] = set(
+                    expected_response.lower().split()
+                )
+
             logger.info("  Testing agent_v1...")
             result_v1 = self._evaluate_instruction(instruction, "v1")
 
@@ -326,20 +335,17 @@ class AgentEvaluator:
         if error is None and response_text is not None:
             result["success"] = True
             if "expected_response" in instruction:
-                # Pre-computation for optimization
                 expected_response = instruction["expected_response"]
                 response_tokens = response_text.split()
-                expected_tokens = expected_response.split()
                 response_lower_words = set(response_text.lower().split())
-                expected_lower_words = set(expected_response.lower().split())
 
                 metrics = self._calculate_metrics(
                     response_text,
                     expected_response,
                     response_tokens,
-                    expected_tokens,
+                    instruction["expected_tokens"],
                     response_lower_words,
-                    expected_lower_words
+                    instruction["expected_lower_words"]
                 )
                 metrics["response_time"] = duration
                 result["metrics"] = metrics

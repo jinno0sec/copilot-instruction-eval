@@ -5,6 +5,10 @@ Tests for the GitHub Copilot evaluation setup.
 import unittest
 import json
 import os
+import shutil
+from unittest.mock import patch, MagicMock
+
+from evaluate_agents import AgentEvaluator
 
 
 class TestEvaluationSetup(unittest.TestCase):
@@ -71,6 +75,75 @@ class TestAgentEndpoints(unittest.TestCase):
         """Test that agent_v2 endpoint is accessible."""
         # This is a placeholder test
         self.skipTest("Agent endpoint tests require actual API endpoints")
+
+
+class TestAgentEvaluatorLogic(unittest.TestCase):
+    """Tests the core logic of the AgentEvaluator class."""
+
+    def setUp(self):
+        """Set up for each test."""
+        # Create a dummy instructions file for testing
+        self.instructions_data = {
+            "instructions": [
+                {
+                    "id": "test-001",
+                    "type": "test",
+                    "title": "Test Instruction",
+                    "description": "A test instruction.",
+                    "difficulty": "easy",
+                    "expected_response": "expected response"
+                }
+            ]
+        }
+        self.test_instructions_file = "test_instructions.json"
+        with open(self.test_instructions_file, "w") as f:
+            json.dump(self.instructions_data, f)
+
+        # Create a dummy config that passes validation
+        self.config = {
+            "agent_v1_endpoint": "http://dummy.url/v1",
+            "agent_v2_endpoint": "http://dummy.url/v2",
+            "api_key_v1": "dummy_key_v1",
+            "api_key_v2": "dummy_key_v2",
+            "instructions_file": self.test_instructions_file,
+            "results_dir": "test_results",
+            "timeout": 1,
+            "max_retries": 1,
+            "retry_delay": 1,
+        }
+
+        # Clean up results directory before test
+        if os.path.exists(self.config["results_dir"]):
+            shutil.rmtree(self.config["results_dir"])
+
+    def tearDown(self):
+        """Clean up after each test."""
+        os.remove(self.test_instructions_file)
+        if os.path.exists(self.config["results_dir"]):
+            shutil.rmtree(self.config["results_dir"])
+
+    @patch('evaluate_agents.AgentEvaluator._call_agent_with_retry')
+    @patch('evaluate_agents.AgentEvaluator._save_results')
+    def test_run_evaluation_calls_save_once(self, mock_save_results, mock_call_agent):
+        """
+        Verify that run_evaluation calls _save_results only once after processing all instructions.
+        """
+        # Arrange: Mock the agent API call to return a successful dummy response
+        mock_call_agent.return_value = ("dummy agent response", None)
+
+        # Act: Initialize the evaluator and run the evaluation
+        evaluator = AgentEvaluator(self.config)
+        evaluator.run_evaluation()
+
+        # Assert: Check that the agent was called for each version
+        self.assertEqual(mock_call_agent.call_count, 2) # v1 and v2
+
+        # Assert: Check that results were populated
+        self.assertEqual(len(evaluator.results), 1)
+        self.assertEqual(evaluator.results[0]['instruction_id'], 'test-001')
+
+        # Assert: Crucially, check that _save_results was called exactly once
+        mock_save_results.assert_called_once()
 
 
 if __name__ == "__main__":

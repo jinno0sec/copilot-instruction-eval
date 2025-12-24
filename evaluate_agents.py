@@ -283,11 +283,27 @@ class AgentEvaluator:
                 f"({instruction['type']})"
             )
 
+            # --- Optimization: Build prompt once per instruction ---
+            prompt_parts = []
+            if instruction.get("description"):
+                prompt_parts.append(instruction["description"])
+            if instruction.get("code"):
+                prompt_parts.append(f'\n\n```\n{instruction["code"]}\n```')
+            if instruction.get("requirements"):
+                req_text = "\n".join(
+                    f'- {r}' for r in instruction["requirements"]
+                )
+                prompt_parts.append(f'\n\nRequirements:\n{req_text}')
+            instruction_text = "\n".join(prompt_parts)
+            # --- End Optimization ---
+
             logger.info("  Testing agent_v1...")
-            result_v1 = self._evaluate_instruction(instruction, "v1")
+            result_v1 = self._evaluate_instruction(instruction, "v1",
+                                                   instruction_text)
 
             logger.info("  Testing agent_v2...")
-            result_v2 = self._evaluate_instruction(instruction, "v2")
+            result_v2 = self._evaluate_instruction(instruction, "v2",
+                                                   instruction_text)
 
             self.results.append({
                 "instruction_id": instruction_id,
@@ -302,20 +318,11 @@ class AgentEvaluator:
             self._save_results()
 
     def _evaluate_instruction(
-            self, instruction: Dict[str, Any], agent_version: str
+            self, instruction: Dict[str, Any], agent_version: str,
+            instruction_text: str
     ) -> Dict[str, Any]:
         """Evaluate a single instruction with the specified agent version."""
         result = {"success": False}
-
-        prompt_parts = []
-        if instruction.get("description"):
-            prompt_parts.append(instruction["description"])
-        if instruction.get("code"):
-            prompt_parts.append(f'\n\n```\n{instruction["code"]}\n```')
-        if instruction.get("requirements"):
-            req_text = "\n".join(f'- {r}' for r in instruction["requirements"])
-            prompt_parts.append(f'\n\nRequirements:\n{req_text}')
-        instruction_text = "\n".join(prompt_parts)
 
         start_time = time.time()
         response_text, error = self._call_agent_with_retry(

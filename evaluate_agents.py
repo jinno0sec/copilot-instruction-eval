@@ -299,7 +299,8 @@ class AgentEvaluator:
                 "v2_metrics": result_v2.get("metrics", {})
             })
 
-            self._save_results()
+        # Save results once after all instructions are processed
+        self._save_results()
 
     def _evaluate_instruction(
             self, instruction: Dict[str, Any], agent_version: str

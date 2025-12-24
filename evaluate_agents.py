@@ -11,12 +11,55 @@ import os
 import sys
 import time
 import logging
+import importlib
 from typing import Dict, List, Any, Optional, Tuple
+from datetime import datetime
 
+# --- Dependency Check ---
+# Check for required packages before attempting to import them, to provide a friendly error.
+def check_dependencies():
+    """Checks for missing dependencies and provides installation instructions."""
+    dependencies = {
+        "requests": "requests",
+        "pandas": "pandas",
+        "numpy": "numpy",
+        "dotenv": "python-dotenv",
+        "tqdm": "tqdm",
+        "matplotlib": "matplotlib",
+        "nltk": "nltk",
+        "rouge": "rouge-score",
+        "seaborn": "seaborn"
+    }
+    missing_packages_for_pip = []
+
+    for import_name, pip_name in dependencies.items():
+        try:
+            importlib.import_module(import_name)
+        except ImportError:
+            missing_packages_for_pip.append(pip_name)
+
+    if missing_packages_for_pip:
+        print("=" * 70, file=sys.stderr)
+        print(" ERROR: Missing required Python packages.", file=sys.stderr)
+        print("=" * 70, file=sys.stderr)
+        print("The following packages are required to run this script:", file=sys.stderr)
+        for pkg in missing_packages_for_pip:
+            print(f"  - {pkg}", file=sys.stderr)
+        print("\nPlease install them by running the following command:", file=sys.stderr)
+        print(f"  pip install {' '.join(missing_packages_for_pip)}", file=sys.stderr)
+        print("\nOr, to install all dependencies for this project:", file=sys.stderr)
+        print("  pip install -r requirements.txt", file=sys.stderr)
+        print("=" * 70, file=sys.stderr)
+        return False
+    return True
+
+if not check_dependencies():
+    sys.exit(1)
+
+# Now, safe to import the checked packages
 import requests
 import pandas as pd
 import numpy as np
-from datetime import datetime
 from dotenv import load_dotenv
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -61,6 +104,9 @@ class AgentEvaluator:
         self.config = config
         self._validate_config()
         self.instructions = self._load_instructions()
+        if self.instructions is None: # Stop initialization if instructions failed to load
+            raise SystemExit("Exiting due to instruction loading failure.")
+
         self.results = []
         self._setup_directories()
         self.rouge = Rouge()  # ROUGEスコア計算用
@@ -74,11 +120,11 @@ class AgentEvaluator:
 
     def _validate_config(self) -> None:
         """Validate the configuration."""
+        # 1. Check for missing API keys and endpoints in .env
         required_vars = [
             "agent_v1_endpoint", "agent_v2_endpoint",
             "api_key_v1", "api_key_v2"
         ]
-
         missing_vars = [
             var for var in required_vars if not self.config.get(var)
         ]
@@ -90,26 +136,47 @@ class AgentEvaluator:
             )
             raise ValueError(msg)
 
-    def _load_instructions(self) -> List[Dict[str, Any]]:
-        """Load instructions from the JSON file."""
+        # 2. Check for instructions.json
+        instructions_file = self.config["instructions_file"]
+        if not os.path.exists(instructions_file):
+            msg = (
+                f"Instructions file not found: '{instructions_file}'.\n"
+                f"Please create it or copy the example: "
+                f"cp {instructions_file}.example {instructions_file}"
+            )
+            raise FileNotFoundError(msg)
+
+    def _load_instructions(self) -> Optional[List[Dict[str, Any]]]:
+        """
+        Load instructions from the JSON file.
+        Returns the list of instructions or None if loading fails.
+        """
+        filepath = self.config["instructions_file"]
         try:
-            filepath = self.config["instructions_file"]
             with open(filepath, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                instructions = data.get("instructions", [])
-                logger.info(
-                    f"Loaded {len(instructions)} instructions from {filepath}"
-                )
-                return instructions
+
+            instructions = data.get("instructions")
+            if instructions is None:
+                logger.error(f"Error: The '{filepath}' file is missing the top-level 'instructions' key.")
+                return None
+            if not isinstance(instructions, list):
+                logger.error(f"Error: The 'instructions' key in '{filepath}' must contain a list.")
+                return None
+
+            logger.info(f"Loaded {len(instructions)} instructions from {filepath}")
+            return instructions
         except FileNotFoundError:
+            # This is already checked in _validate_config, but as a safeguard.
             logger.error(f"Instructions file not found: {filepath}")
-            raise
+            return None
         except json.JSONDecodeError as e:
-            logger.error(f"Invalid JSON in instructions file: {e}")
-            raise
+            logger.error(f"Error: Invalid JSON in '{filepath}': {e}")
+            logger.error("Please validate the JSON syntax.")
+            return None
         except Exception as e:
-            logger.error(f"Error loading instructions: {e}")
-            raise
+            logger.error(f"An unexpected error occurred while loading instructions: {e}")
+            return None
 
     def _setup_directories(self) -> None:
         """Create necessary directories for storing results."""
@@ -682,25 +749,35 @@ def main():
     try:
         evaluator = AgentEvaluator(CONFIG)
 
-        print("\n[START] Starting evaluation...")
-        start_time = time.time()
-        evaluator.run_evaluation()
+        if evaluator.instructions:
+            print("\n[START] Starting evaluation...")
+            start_time = time.time()
+            evaluator.run_evaluation()
 
-        print("\n[REPORT] Generating report...")
-        evaluator.generate_report()
+            print("\n[REPORT] Generating report...")
+            evaluator.generate_report()
 
-        duration = time.time() - start_time
-        print(f"\n[DONE] Evaluation completed in {duration:.1f} seconds!")
-        print(
-            "[RESULTS] Report and results saved to: "
-            f"{os.path.abspath(CONFIG['results_dir'])}"
-        )
+            duration = time.time() - start_time
+            print(f"\n[DONE] Evaluation completed in {duration:.1f} seconds!")
+            print(
+                "[RESULTS] Report and results saved to: "
+                f"{os.path.abspath(CONFIG['results_dir'])}"
+            )
 
+    except (ValueError, FileNotFoundError) as e:
+        # Catch configuration errors and log them cleanly.
+        logger.error(f"\nConfiguration Error: {e}")
+        logger.error("Please correct the configuration and try again.")
+        sys.exit(1)
+    except SystemExit as e:
+        # Handle controlled exits from the evaluator itself.
+        logger.info(e)
+        sys.exit(1)
     except KeyboardInterrupt:
         print("\n[INTERRUPTED] Evaluation interrupted by user.")
         sys.exit(1)
     except Exception as e:
-        print(f"\n[ERROR] An error occurred: {str(e)}")
+        print(f"\n[ERROR] An unexpected error occurred: {str(e)}")
         logging.exception("Evaluation failed")
         sys.exit(1)
 

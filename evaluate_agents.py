@@ -283,11 +283,24 @@ class AgentEvaluator:
                 f"({instruction['type']})"
             )
 
+            # Pre-compute expected response data once per instruction
+            # to avoid redundant processing in the loop.
+            expected_response = instruction.get("expected_response")
+            expected_tokens = None
+            expected_lower_words = None
+            if expected_response:
+                expected_tokens = expected_response.split()
+                expected_lower_words = set(expected_response.lower().split())
+
             logger.info("  Testing agent_v1...")
-            result_v1 = self._evaluate_instruction(instruction, "v1")
+            result_v1 = self._evaluate_instruction(
+                instruction, "v1", expected_tokens, expected_lower_words
+            )
 
             logger.info("  Testing agent_v2...")
-            result_v2 = self._evaluate_instruction(instruction, "v2")
+            result_v2 = self._evaluate_instruction(
+                instruction, "v2", expected_tokens, expected_lower_words
+            )
 
             self.results.append({
                 "instruction_id": instruction_id,
@@ -302,7 +315,9 @@ class AgentEvaluator:
             self._save_results()
 
     def _evaluate_instruction(
-            self, instruction: Dict[str, Any], agent_version: str
+            self, instruction: Dict[str, Any], agent_version: str,
+            expected_tokens: Optional[List[str]],
+            expected_lower_words: Optional[set]
     ) -> Dict[str, Any]:
         """Evaluate a single instruction with the specified agent version."""
         result = {"success": False}
@@ -325,13 +340,13 @@ class AgentEvaluator:
 
         if error is None and response_text is not None:
             result["success"] = True
-            if "expected_response" in instruction:
-                # Pre-computation for optimization
+            if ("expected_response" in instruction and
+                    expected_tokens is not None and
+                    expected_lower_words is not None):
                 expected_response = instruction["expected_response"]
+                # Process the actual response from the agent
                 response_tokens = response_text.split()
-                expected_tokens = expected_response.split()
                 response_lower_words = set(response_text.lower().split())
-                expected_lower_words = set(expected_response.lower().split())
 
                 metrics = self._calculate_metrics(
                     response_text,

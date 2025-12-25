@@ -15,6 +15,8 @@ import subprocess
 import sys
 import json
 import time
+if sys.platform != "win32":
+    import pexpect
 from pathlib import Path
 from typing import Dict, Optional
 from dataclasses import dataclass, asdict
@@ -95,10 +97,10 @@ class NewCopilotCLI:
         self, prompt: str, timeout: int = 60
     ) -> CopilotCLIResult:
         """
-        対話型でプロンプトを送信（実験的）
+        対話型でプロンプトを自動送信
 
-        注意: Copilot CLIは対話型のため、自動化は制限されます。
-        この実装は概念実証であり、実際の使用では調整が必要です。
+        pexpect を使用して対話型 CLI とのやり取りを自動化します。
+        この機能は現在、Windowsではサポートされていません。
 
         Args:
             prompt: 送信するプロンプト
@@ -107,52 +109,80 @@ class NewCopilotCLI:
         Returns:
             CopilotCLIResult: 実行結果
         """
+        if sys.platform == "win32":
+            return CopilotCLIResult(
+                success=False,
+                prompt=prompt,
+                error="Automated interactive prompt is not supported on Windows.",
+            )
+
         start_time = time.time()
 
         try:
-            # 注: これは簡易実装です。実際のCopilot CLIは対話型のため、
-            # pexpectなどのライブラリを使用した方が安定します。
-            command_parts = self.copilot_command.split()
-            process = subprocess.Popen(
-                command_parts,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
+            # npx copilotプロセスを開始
+            child = pexpect.spawn(
+                self.copilot_command, timeout=timeout, encoding="utf-8"
             )
 
+            # デバッグ用にやり取りをコンソールに出力
+            child.logfile_read = sys.stdout
+
+            # Copilot CLIのプロンプト `>` を待つ
+            child.expect(r">\s*", timeout=20)  # 初回起動は時間がかかることがある
+
             # プロンプトを送信
-            stdout, stderr = process.communicate(
-                input=prompt + "\n", timeout=timeout
-            )
+            child.sendline(prompt)
+
+            # 応答の終わりを待つ（次のプロンプト `>` が表示されるまで）
+            child.expect(r">\s*", timeout=timeout)
+
+            response = child.before
+
+            # プロセスを正常に終了
+            child.sendline("/exit")
+            child.expect(pexpect.EOF)
+            child.close()
 
             execution_time = time.time() - start_time
 
-            if process.returncode == 0 or stdout:
+            if child.exitstatus == 0:
+                # 応答から送信したプロンプト部分を削除
+                clean_response = response.strip().replace(prompt, "").strip()
                 return CopilotCLIResult(
                     success=True,
                     prompt=prompt,
-                    response=stdout,
+                    response=clean_response,
                     execution_time=execution_time,
                 )
             else:
+                error_message = child.before  # エラーメッセージを取得
                 return CopilotCLIResult(
                     success=False,
                     prompt=prompt,
-                    error=stderr,
+                    error=f"Process exited with status {child.exitstatus}. Output: {error_message}",
                     execution_time=execution_time,
                 )
 
-        except subprocess.TimeoutExpired:
+        except pexpect.exceptions.TIMEOUT:
             return CopilotCLIResult(
                 success=False,
                 prompt=prompt,
                 error=f"Timeout after {timeout} seconds",
                 execution_time=timeout,
             )
+        except pexpect.exceptions.EOF:
+            return CopilotCLIResult(
+                success=False,
+                prompt=prompt,
+                error=f"EOF reached. Process terminated unexpectedly. Output: {child.before}",
+                execution_time=time.time() - start_time,
+            )
         except Exception as e:
             return CopilotCLIResult(
-                success=False, prompt=prompt, error=str(e), execution_time=0
+                success=False,
+                prompt=prompt,
+                error=str(e),
+                execution_time=time.time() - start_time,
             )
 
     def create_prompt_for_code_review(
@@ -241,56 +271,14 @@ class NewCopilotCodeReviewer:
         print()
         return True
 
-    def review_code_manual(self, code: str, instruction: str):
-        """
-        手動でのコードレビュー（対話型）
-
-        Copilot CLIは対話型のため、この関数は指示を表示するだけです。
-        ユーザーは手動でCopilot CLIを起動して使用する必要があります。
-
-        Args:
-            code: レビュー対象のコード
-            instruction: レビュー指示
-        """
-        print("=" * 70)
-        print("コードレビュー準備完了")
-        print("=" * 70)
-
-        # プロンプトの生成
-        prompt = self.copilot.create_prompt_for_code_review(code, instruction)
-
-        # 一時ファイルに保存
-        temp_file = Path("/tmp/copilot_review_prompt.txt")
-        with open(temp_file, "w", encoding="utf-8") as f:
-            f.write(prompt)
-
-        print("\n✅ レビュープロンプトを作成しました")
-        print(f"📄 保存先: {temp_file}")
-
-        print("\n" + "=" * 70)
-        print("次のステップ（手動実行）")
-        print("=" * 70)
-        print("\n1. ターミナルで Copilot CLI を起動:")
-        print("   $ npx copilot")
-        print("\n2. 以下のプロンプトをコピー＆ペースト:")
-        print("\n" + "-" * 70)
-        print(prompt)
-        print("-" * 70)
-
-        print("\n3. または、ファイルから読み込み:")
-        print(f"   $ cat {temp_file} | npx copilot")
-
-        print("\n⚠️  注意: 新しい Copilot CLI は対話型のため、")
-        print("   完全な自動化にはさらなる実装が必要です。")
-
-    def review_code_batch(
+    def review_code_automated(
         self, code: str, instruction: str, output_file: Path
     ) -> Dict:
         """
-        バッチモードでのコードレビュー（実験的）
+        自動化されたコードレビューを実行
 
-        注意: これは実験的な実装です。Copilot CLIの仕様により、
-        完全な自動化は保証されません。
+        pexpect を利用して、Copilot CLIとの対話を自動化します。
+        結果は指定されたファイルにJSON形式で保存されます。
 
         Args:
             code: レビュー対象のコード
@@ -301,7 +289,7 @@ class NewCopilotCodeReviewer:
             Dict: 実行結果
         """
         print("=" * 70)
-        print("バッチモード コードレビュー（実験的）")
+        print("自動コードレビューを実行中...")
         print("=" * 70)
 
         # プロンプトの作成
@@ -414,25 +402,17 @@ if __name__ == "__main__":
         "型ヒントとドキュメント文字列を追加してください。"
     )
 
-    # 手動レビューのための準備
+    # 自動レビューの実行
     print("\n" + "=" * 70)
-    print("デモ: コードレビューの準備")
+    print("デモ: 自動コードレビューの実行")
     print("=" * 70)
 
-    reviewer.review_code_manual(test_code, instruction)
-
-    # バッチモードを試す場合（実験的）
-    print("\n" + "=" * 70)
-    print("オプション: バッチモードを試しますか？（実験的）")
-    print("=" * 70)
-    print("注意: 新しいCopilot CLIは対話型のため、バッチモードは不安定です。")
-    print("      完全な自動化には pexpect などの追加ライブラリが必要です。")
-
-    user_input = input("\nバッチモードを試す？ (y/N): ").lower().strip()
-
-    if user_input == "y":
+    if sys.platform == "win32":
+        print("⚠️  警告: 自動レビューは現在 Windows ではサポートされていません。")
+        print("   この機能は pexpect ライブラリを使用しており、Unix系のOSでのみ動作します。")
+    else:
         output_file = Path("copilot_review_result_new.json")
-        result = reviewer.review_code_batch(
+        result = reviewer.review_code_automated(
             test_code, instruction, output_file
         )
         print("\n📊 結果:")
@@ -442,11 +422,10 @@ if __name__ == "__main__":
     print("  完了")
     print("=" * 70 + "\n")
 
-    print("💡 ヒント:")
-    print("   完全な自動化を実現するには、以下のオプションを検討してください:")
-    print("   1. pexpect ライブラリを使用した対話型自動化")
-    print("   2. Copilot CLIのNode.js APIを直接使用")
-    print("   3. VS Code Extension での実装")
+    print("💡 今後の改善案:")
+    print("   1. Windows環境での自動化対応（例: wexpect ライブラリの利用）")
+    print("   2. Copilot CLIのNode.js APIを直接利用した、より安定した連携")
+    print("   3. VS Code Extension API を利用した、さらに高度な連携")
     print()
 
 

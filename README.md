@@ -72,6 +72,19 @@ python copilot_cli_new_automation.py
 
 This will process the sample code in `/code` and generate a review prompt, which it then prints to the console and copies to your clipboard. You can then paste this prompt into an interactive `npx copilot` session to get a code review.
 
+## ✅ Code Quality and CI
+
+This project is equipped with a Continuous Integration (CI) pipeline powered by GitHub Actions. All pull requests are automatically checked to ensure they meet our quality standards. The pipeline runs the following checks:
+*   **Python Linting** with `flake8`.
+*   **Python Testing** with `pytest`.
+*   **Dependency Vulnerability Scanning** with `pip-audit` and `npm audit`.
+
+Passing these checks is a mandatory requirement for merging any changes, as defined in our constitution.
+
+## 🤝 Contributing
+
+We welcome contributions that align with our project's purpose and governing principles. If you are interested in contributing, please read our **[`CONTRIBUTING.md`](CONTRIBUTING.md)** file for detailed guidelines on the development workflow and pull request requirements.
+
 ## 📚 Canonical Documents
 
 The following documents are the official sources of truth for the project:

@@ -45,6 +45,11 @@ pip install -r requirements.txt
 # 3. Install Node.js dependencies (for tooling)
 npm install
 
+# 4. Set up your environment variables
+# Create a .env file from the example template
+cp .env.example .env
+
+# Now, open the .env file and add your secrets (e.g., API keys).
 ```
 
 ### 3. Authentication

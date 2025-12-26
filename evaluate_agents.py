@@ -275,8 +275,13 @@ class AgentEvaluator:
             f"Starting evaluation of {len(self.instructions)} instructions..."
         )
 
-        for instruction in tqdm(self.instructions,
-                                desc="Evaluating instructions"):
+        # ⚡ Bolt Optimization: Periodically save results to balance
+        # performance (fewer writes) and fault tolerance (less data loss).
+        save_interval = 10  # Define how often to save results
+
+        for i, instruction in enumerate(
+            tqdm(self.instructions, desc="Evaluating instructions")
+        ):
             instruction_id = instruction["id"]
             logger.info(
                 f"\nEvaluating instruction: {instruction['title']} "
@@ -299,7 +304,16 @@ class AgentEvaluator:
                 "v2_metrics": result_v2.get("metrics", {})
             })
 
-            self._save_results()
+            # Periodically save results to prevent data loss on long runs
+            if (i + 1) % save_interval == 0:
+                logger.info(
+                    f"Saving intermediate results at instruction {i + 1}..."
+                )
+                self._save_results()
+
+        # Final save to ensure all results are written
+        logger.info("Saving final results...")
+        self._save_results()
 
     def _evaluate_instruction(
             self, instruction: Dict[str, Any], agent_version: str

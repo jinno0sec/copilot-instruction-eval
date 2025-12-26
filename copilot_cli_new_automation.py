@@ -11,6 +11,7 @@
 - アクティブなCopilot サブスクリプション
 """
 
+import argparse
 import subprocess
 import sys
 import json
@@ -375,6 +376,29 @@ class NewCopilotCodeReviewer:
 
 def main():
     """メイン実行関数"""
+    parser = argparse.ArgumentParser(
+        description="新しい GitHub Copilot CLI を使用したコードレビュー自動化ツール",
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    parser.add_argument(
+        "-i",
+        "--input-file",
+        type=Path,
+        default=Path("code/sample_code_to_review.py"),
+        help="レビュー対象のコードファイル (デフォルト: code/sample_code_to_review.py)",
+    )
+    parser.add_argument(
+        "--batch",
+        action="store_true",
+        help="対話的なプロンプトを表示せず、実験的なバッチモードでレビューを実行する",
+    )
+    parser.add_argument(
+        "--show-guide",
+        action="store_true",
+        help="Copilot CLIの使用ガイドを表示する",
+    )
+    args = parser.parse_args()
+
     print("\n" + "=" * 70)
     print("  新しい GitHub Copilot CLI を使用したコードレビュー")
     print("=" * 70 + "\n")
@@ -385,69 +409,59 @@ def main():
     if not reviewer.check_prerequisites():
         print("\n❌ 前提条件を満たしていません。")
         print("   セットアップを完了してから再実行してください。")
-        reviewer.show_usage_guide()
+        if not args.show_guide:
+            reviewer.show_usage_guide()
         sys.exit(1)
 
-    # 使用ガイドの表示
-    reviewer.show_usage_guide()
+    if args.show_guide:
+        reviewer.show_usage_guide()
+        sys.exit(0)
 
-    # テストコード
-    test_code = """
-def calculate_area(width, height):
-    # This function calculates the area of a rectangle
-    return width * height
+    # 入力ファイルの存在確認
+    if not args.input_file.exists():
+        print(f"❌ 入力ファイルが見つかりません: {args.input_file}")
+        sys.exit(1)
 
-def get_user_input():
-    # Get user input for width and height
-    w = input("Enter width: ")
-    h = input("Enter height: ")
-    return w, h
-
-if __name__ == "__main__":
-    w, h = get_user_input()
-    area = calculate_area(int(w), int(h))
-    print("Area:", area)
-"""
+    # コードと指示の読み込み
+    try:
+        test_code = args.input_file.read_text(encoding="utf-8")
+    except Exception as e:
+        print(f"❌ ファイルの読み込みに失敗しました: {e}")
+        sys.exit(1)
 
     instruction = (
         "このPythonコードをPEP8に準拠するようにレビューし、"
         "型ヒントとドキュメント文字列を追加してください。"
     )
 
-    # 手動レビューのための準備
-    print("\n" + "=" * 70)
-    print("デモ: コードレビューの準備")
-    print("=" * 70)
+    if args.batch:
+        # 結果ディレクトリの準備
+        results_dir = Path("results")
+        results_dir.mkdir(exist_ok=True)
 
-    reviewer.review_code_manual(test_code, instruction)
+        # 出力ファイルパスの生成
+        output_filename = f"{args.input_file.stem}_review_result.json"
+        output_file = results_dir / output_filename
 
-    # バッチモードを試す場合（実験的）
-    print("\n" + "=" * 70)
-    print("オプション: バッチモードを試しますか？（実験的）")
-    print("=" * 70)
-    print("注意: 新しいCopilot CLIは対話型のため、バッチモードは不安定です。")
-    print("      完全な自動化には pexpect などの追加ライブラリが必要です。")
+        # バッチモードでレビューを実行
+        result = reviewer.review_code_batch(test_code, instruction, output_file)
 
-    user_input = input("\nバッチモードを試す？ (y/N): ").lower().strip()
+        print("\n📊 結果の概要:")
+        print(f"  - 成功: {result.get('success')}")
+        print(f"  - 実行時間: {result.get('execution_time', 0):.2f}秒")
+        if result.get('error'):
+            print(f"  - エラー: {result.get('error')}")
 
-    if user_input == "y":
-        output_file = Path("copilot_review_result_new.json")
-        result = reviewer.review_code_batch(
-            test_code, instruction, output_file
-        )
-        print("\n📊 結果:")
-        print(json.dumps(result, indent=2, ensure_ascii=False))
+    else:
+        # 手動レビューのための準備と指示表示
+        print("\n" + "=" * 70)
+        print("手動レビューモード")
+        print("=" * 70)
+        reviewer.review_code_manual(test_code, instruction)
 
     print("\n" + "=" * 70)
     print("  完了")
     print("=" * 70 + "\n")
-
-    print("💡 ヒント:")
-    print("   完全な自動化を実現するには、以下のオプションを検討してください:")
-    print("   1. pexpect ライブラリを使用した対話型自動化")
-    print("   2. Copilot CLIのNode.js APIを直接使用")
-    print("   3. VS Code Extension での実装")
-    print()
 
 
 if __name__ == "__main__":

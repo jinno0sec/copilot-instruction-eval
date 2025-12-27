@@ -63,14 +63,26 @@ Follow the on-screen instructions to authorize the device.
 
 ## 💻 Usage
 
-The primary script for this project is `copilot_cli_new_automation.py`. This script prepares code and instructions to be used with the interactive Copilot CLI.
+The primary script, `copilot_cli_new_automation.py`, now fully automates the code review process.
+
+### Automated Code Review
+
+On Unix-like systems (Linux, macOS), you can run the end-to-end automated review with a single command.
 
 ```bash
-# Run the automation script
+# Run the fully automated code review script
 python copilot_cli_new_automation.py
 ```
 
-This will process the sample code in `/code` and generate a review prompt, which it then prints to the console and copies to your clipboard. You can then paste this prompt into an interactive `npx copilot` session to get a code review.
+The script will:
+1.  Read the sample code from `/code/sample.py`.
+2.  Interact with the GitHub Copilot CLI to perform a code review.
+3.  Save the complete review results to `/results/review_result.json`.
+4.  Display a summary of the review in the console.
+
+### Manual Mode on Windows
+
+Due to technical limitations, the automated interaction is not supported on Windows. The script will detect the OS and, on Windows, provide guidance for running the review manually.
 
 ## 📚 Canonical Documents
 
